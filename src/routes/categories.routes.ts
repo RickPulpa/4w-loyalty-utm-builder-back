@@ -50,6 +50,7 @@ const categorySchema = z.object({
     .regex(/^[a-z0-9_]+$/, "key debe ser snake_case (solo minúsculas, números y _)"),
   label: z.string().min(1),
   is_required: z.boolean().optional().default(false),
+  field_type: z.enum(["select", "multi_select", "month", "age_range"]).optional().default("select"),
   sort_order: z.number().int().optional().default(0),
 });
 
@@ -59,15 +60,17 @@ categoriesRouter.post("/", requireAdmin, async (req, res) => {
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.flatten() });
   }
-  const { level, key, label, is_required, sort_order } = parsed.data;
+  const { level, key, label, is_required, field_type, sort_order } = parsed.data;
 
   try {
     const [result] = await pool.query<any>(
-      `INSERT INTO categories (level, \`key\`, label, is_required, sort_order)
-       VALUES (?, ?, ?, ?, ?)`,
-      [level, key, label, is_required, sort_order]
+      `INSERT INTO categories (level, \`key\`, label, is_required, field_type, sort_order)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [level, key, label, is_required, field_type, sort_order]
     );
-    return res.status(201).json({ id: result.insertId, level, key, label, is_required, sort_order, values: [] });
+    return res
+      .status(201)
+      .json({ id: result.insertId, level, key, label, is_required, field_type, sort_order, values: [] });
   } catch (err: any) {
     if (err?.code === "ER_DUP_ENTRY") {
       return res.status(409).json({ error: `Ya existe una categoría con la clave "${key}".` });

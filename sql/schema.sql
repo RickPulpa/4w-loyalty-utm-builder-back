@@ -19,12 +19,18 @@ CREATE TABLE IF NOT EXISTS users (
 -- Cada "categoría" es un campo administrable del formulario (Área de Negocio,
 -- Objetivo, Modelo, etc.). `level` indica en qué parte del nombre entra:
 -- campaign (nombre de campaña), adset (conjunto de anuncios) o ad (anuncio).
+-- `field_type` controla cómo se renderiza el campo en el Generador y cómo se arma
+-- su parte del nombre final: 'select' (desplegable normal, usa catalog_values),
+-- 'multi_select' (varios valores a la vez, ej. Plataforma Facebook/Instagram),
+-- 'month' (selector de mes y año, sin catalog_values) o 'age_range' (dos números
+-- "de/a", sin catalog_values).
 CREATE TABLE IF NOT EXISTS categories (
   id INT AUTO_INCREMENT PRIMARY KEY,
   level ENUM('campaign', 'adset', 'ad') NOT NULL,
   `key` VARCHAR(100) NOT NULL UNIQUE,
   label VARCHAR(150) NOT NULL,
   is_required BOOLEAN NOT NULL DEFAULT TRUE,
+  field_type ENUM('select', 'multi_select', 'month', 'age_range') NOT NULL DEFAULT 'select',
   sort_order INT NOT NULL DEFAULT 0,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP

@@ -8,9 +8,17 @@ function required(name: string, fallback?: string): string {
   return value;
 }
 
+// CORS_ORIGIN acepta uno o varios orígenes separados por coma (ej:
+// "http://localhost:4200,https://4w-loyalty-utm-builder-front.mayu.digital").
+// Sin configurar, solo permite localhost:4200 (dev).
+const corsOrigins = (process.env.CORS_ORIGIN ?? "http://localhost:4200")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 export const env = {
   port: Number(process.env.PORT ?? 3000),
-  corsOrigin: process.env.CORS_ORIGIN ?? "http://localhost:4200",
+  corsOrigin: corsOrigins,
 
   jwtSecret: required("JWT_SECRET"),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? "8h",

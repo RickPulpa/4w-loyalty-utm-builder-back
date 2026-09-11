@@ -1,11 +1,14 @@
 export type FieldLevel = "campaign" | "adset" | "ad";
 
+export type FieldType = "select" | "multi_select" | "month" | "age_range";
+
 export interface CategoryRow {
   id: number;
   level: FieldLevel;
   key: string;
   label: string;
   is_required: boolean;
+  field_type: FieldType;
   sort_order: number;
   created_at: string;
   updated_at: string;

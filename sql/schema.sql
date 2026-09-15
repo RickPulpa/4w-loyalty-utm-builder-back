@@ -22,15 +22,22 @@ CREATE TABLE IF NOT EXISTS users (
 -- `field_type` controla cómo se renderiza el campo en el Generador y cómo se arma
 -- su parte del nombre final: 'select' (desplegable normal, usa catalog_values),
 -- 'multi_select' (varios valores a la vez, ej. Plataforma Facebook/Instagram),
--- 'month' (selector de mes y año, sin catalog_values) o 'age_range' (dos números
+-- 'chip_select' (selección única con UI de chips, ej. Concesionario), 'month'
+-- (selector de mes y año, sin catalog_values) o 'age_range' (dos números
 -- "de/a", sin catalog_values).
+-- `depends_on_key` + `depends_on_value_label`: si están seteados, este campo solo
+-- aparece en el Generador cuando la categoría `depends_on_key` (del mismo nivel)
+-- tiene seleccionado el valor `depends_on_value_label` (ej. Entidad Financiera solo
+-- aparece si Tipo de Promoción = BANCOS).
 CREATE TABLE IF NOT EXISTS categories (
   id INT AUTO_INCREMENT PRIMARY KEY,
   level ENUM('campaign', 'adset', 'ad') NOT NULL,
   `key` VARCHAR(100) NOT NULL UNIQUE,
   label VARCHAR(150) NOT NULL,
   is_required BOOLEAN NOT NULL DEFAULT TRUE,
-  field_type ENUM('select', 'multi_select', 'month', 'age_range') NOT NULL DEFAULT 'select',
+  field_type ENUM('select', 'multi_select', 'chip_select', 'month', 'age_range') NOT NULL DEFAULT 'select',
+  depends_on_key VARCHAR(100) NULL,
+  depends_on_value_label VARCHAR(150) NULL,
   sort_order INT NOT NULL DEFAULT 0,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -39,11 +46,14 @@ CREATE TABLE IF NOT EXISTS categories (
 -- Cada valor posible dentro de una categoría (ej: categoría "Objetivo" ->
 -- valor "LEADS" con abreviatura "LDS"). La abreviatura es siempre editable a
 -- mano desde el panel de administración; el backend solo la *sugiere*.
+-- `region_scope` solo se usa en la categoría "concesionario": filtra qué sedes se
+-- muestran según la Región elegida (LIMA / PROVINCIAS; NULL = se muestra siempre).
 CREATE TABLE IF NOT EXISTS catalog_values (
   id INT AUTO_INCREMENT PRIMARY KEY,
   category_id INT NOT NULL,
   label VARCHAR(150) NOT NULL,
   abbreviation VARCHAR(32) NOT NULL,
+  region_scope ENUM('LIMA', 'PROVINCIAS') NULL,
   sort_order INT NOT NULL DEFAULT 0,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

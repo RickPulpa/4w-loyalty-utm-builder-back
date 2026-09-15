@@ -106,7 +106,7 @@ generatorRouter.post("/generate", async (req, res) => {
   for (const part of parts) {
     const fieldType = fieldTypeById.get(part.categoryId)!;
 
-    if (fieldType === "select" || fieldType === "multi_select") {
+    if (fieldType === "select" || fieldType === "multi_select" || fieldType === "chip_select") {
       if (!part.valueIds || part.valueIds.length === 0) {
         return res.status(400).json({ error: `Falta seleccionar un valor para la categoría ${part.categoryId}.` });
       }

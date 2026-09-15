@@ -1,11 +1,12 @@
 -- UTM Builder — datos iniciales
 -- Carga lo confirmado en el prototipo de Lovable (Honda Naming System, Honda
--- Perú): Área de Negocio, Tipo de Campaña, Objetivo, Coyuntura, Estrategia de
--- Audiencia, Género, Región, Plataforma, Formato, Creatividad y Tipo de
--- Promoción. Quedan vacías (cargalas desde Administrar): "Modelo" (se veían
--- más filas debajo de BRV que no llegamos a scrollear) y "Concesionario" (en
--- el prototipo depende de la Región elegida, algo que este catálogo plano
--- todavía no modela — ver README).
+-- Perú) y en la segunda ronda de feedback del cliente (PPT con capturas
+-- anotadas): Área de Negocio, Tipo de Campaña, Objetivo, Coyuntura, Estrategia
+-- de Audiencia, Género, Región, Concesionario (con region_scope), Plataforma,
+-- Formato, Creatividad, Tipo de Promoción y los campos condicionales de
+-- Promociones Bancarias (Entidad Financiera, Beneficio Bancario). Queda vacío
+-- (cargalo desde Administrar): "Modelo" (se veían más filas debajo de BRV que
+-- no llegamos a scrollear).
 
 USE utm_builder;
 
@@ -97,7 +98,7 @@ INSERT INTO categories (level, `key`, label, is_required, field_type, sort_order
   ('adset', 'estrategia_audiencia', 'Estrategia de Audiencia', TRUE, 'select', 1),
   ('adset', 'genero', 'Género', FALSE, 'select', 2),
   ('adset', 'region', 'Región', TRUE, 'select', 3),
-  ('adset', 'concesionario', 'Concesionario', FALSE, 'select', 4),
+  ('adset', 'concesionario', 'Concesionario', FALSE, 'chip_select', 4),
   ('adset', 'rango_edad', 'Rango de Edad', FALSE, 'age_range', 5),
   ('adset', 'plataforma', 'Plataforma', TRUE, 'multi_select', 6)
 ON DUPLICATE KEY UPDATE label = VALUES(label), field_type = VALUES(field_type);
@@ -154,13 +155,43 @@ JOIN (
 WHERE c.`key` = 'plataforma'
 ON DUPLICATE KEY UPDATE abbreviation = VALUES(abbreviation);
 
+-- "Concesionario" depende de la Región elegida en el Generador (LIMA muestra solo
+-- region_scope='LIMA', PROVINCIAS solo 'PROVINCIAS', LIMA-PROVINCIAS muestra todos
+-- — ver ConcesionarioOptions en generator.component.ts). Lista según lo confirmado
+-- en las capturas del cliente; sumá más sedes desde Administrar cuando las tengan.
+INSERT INTO catalog_values (category_id, label, abbreviation, region_scope, sort_order)
+SELECT id, v.label, v.abbreviation, v.region_scope, v.sort_order
+FROM categories c
+JOIN (
+  SELECT 'VMOTOR-INDEPENDENCIA' AS label, 'VMOTOR-INDEP' AS abbreviation, 'LIMA' AS region_scope, 1 AS sort_order
+  UNION ALL SELECT 'MAQUINARIAS-LAMOLINA', 'MAQ-LAMOLINA', 'LIMA', 2
+  UNION ALL SELECT 'PANA-SANMIGUEL', 'PANA-SANMIG', 'LIMA', 3
+  UNION ALL SELECT 'PANA-SANISIDRO', 'PANA-SANISI', 'LIMA', 4
+  UNION ALL SELECT 'AREQUIPA-SEDE', 'AREQUIPA', 'PROVINCIAS', 5
+  UNION ALL SELECT 'TRUJILLO-SEDE', 'TRUJILLO', 'PROVINCIAS', 6
+  UNION ALL SELECT 'PIURA-SEDE', 'PIURA', 'PROVINCIAS', 7
+  UNION ALL SELECT 'PUCALLPA-SEDE', 'PUCALLPA', 'PROVINCIAS', 8
+) v ON TRUE
+WHERE c.`key` = 'concesionario'
+ON DUPLICATE KEY UPDATE abbreviation = VALUES(abbreviation), region_scope = VALUES(region_scope);
+
 -- ============ Nivel: ANUNCIO ============
 
-INSERT INTO categories (level, `key`, label, is_required, field_type, sort_order) VALUES
-  ('ad', 'formato', 'Formato', TRUE, 'select', 1),
-  ('ad', 'creatividad', 'Creatividad', TRUE, 'select', 2),
-  ('ad', 'tipo_promocion', 'Tipo de Promoción', TRUE, 'select', 3)
-ON DUPLICATE KEY UPDATE label = VALUES(label), field_type = VALUES(field_type);
+-- "Entidad Financiera" y "Beneficio Bancario" son condicionales: solo aparecen en
+-- el Generador cuando Tipo de Promoción = BANCOS (ver depends_on_key/depends_on_value_label).
+INSERT INTO categories
+  (level, `key`, label, is_required, field_type, depends_on_key, depends_on_value_label, sort_order)
+VALUES
+  ('ad', 'formato', 'Formato', TRUE, 'select', NULL, NULL, 1),
+  ('ad', 'creatividad', 'Creatividad', TRUE, 'select', NULL, NULL, 2),
+  ('ad', 'tipo_promocion', 'Tipo de Promoción', TRUE, 'select', NULL, NULL, 3),
+  ('ad', 'entidad_financiera', 'Entidad Financiera', TRUE, 'select', 'tipo_promocion', 'BANCOS', 4),
+  ('ad', 'beneficio_bancario', 'Beneficio Bancario', TRUE, 'select', 'tipo_promocion', 'BANCOS', 5)
+ON DUPLICATE KEY UPDATE
+  label = VALUES(label),
+  field_type = VALUES(field_type),
+  depends_on_key = VALUES(depends_on_key),
+  depends_on_value_label = VALUES(depends_on_value_label);
 
 INSERT INTO catalog_values (category_id, label, abbreviation, sort_order)
 SELECT id, v.label, v.abbreviation, v.sort_order
@@ -200,4 +231,29 @@ JOIN (
   UNION ALL SELECT 'SIN-PROMO', 'SINPR', 4
 ) v ON TRUE
 WHERE c.`key` = 'tipo_promocion'
+ON DUPLICATE KEY UPDATE abbreviation = VALUES(abbreviation);
+
+INSERT INTO catalog_values (category_id, label, abbreviation, sort_order)
+SELECT id, v.label, v.abbreviation, v.sort_order
+FROM categories c
+JOIN (
+  SELECT 'BCP' AS label, 'BCP' AS abbreviation, 1 AS sort_order
+  UNION ALL SELECT 'BBVA', 'BBVA', 2
+  UNION ALL SELECT 'INTERBANK', 'IBK', 3
+) v ON TRUE
+WHERE c.`key` = 'entidad_financiera'
+ON DUPLICATE KEY UPDATE abbreviation = VALUES(abbreviation);
+
+-- El 4to valor ("0-INICIAL") sale de una captura poco nítida del PPT del cliente —
+-- confirmá el texto exacto y ajustalo desde Administrar si hace falta.
+INSERT INTO catalog_values (category_id, label, abbreviation, sort_order)
+SELECT id, v.label, v.abbreviation, v.sort_order
+FROM categories c
+JOIN (
+  SELECT 'CUOTAS' AS label, 'CUOT' AS abbreviation, 1 AS sort_order
+  UNION ALL SELECT 'BONO', 'BONO', 2
+  UNION ALL SELECT 'TASA-PREFERENCIAL', 'TASAPREF', 3
+  UNION ALL SELECT '0-INICIAL', '0INI', 4
+) v ON TRUE
+WHERE c.`key` = 'beneficio_bancario'
 ON DUPLICATE KEY UPDATE abbreviation = VALUES(abbreviation);

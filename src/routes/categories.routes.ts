@@ -50,7 +50,14 @@ const categorySchema = z.object({
     .regex(/^[a-z0-9_]+$/, "key debe ser snake_case (solo minúsculas, números y _)"),
   label: z.string().min(1),
   is_required: z.boolean().optional().default(false),
-  field_type: z.enum(["select", "multi_select", "month", "age_range"]).optional().default("select"),
+  field_type: z
+    .enum(["select", "multi_select", "chip_select", "month", "age_range"])
+    .optional()
+    .default("select"),
+  // Si se setean, este campo solo aparece en el Generador cuando la categoría
+  // `depends_on_key` (del mismo nivel) tiene seleccionado `depends_on_value_label`.
+  depends_on_key: z.string().trim().min(1).nullable().optional().default(null),
+  depends_on_value_label: z.string().trim().min(1).nullable().optional().default(null),
   sort_order: z.number().int().optional().default(0),
 });
 
@@ -60,17 +67,28 @@ categoriesRouter.post("/", requireAdmin, async (req, res) => {
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.flatten() });
   }
-  const { level, key, label, is_required, field_type, sort_order } = parsed.data;
+  const { level, key, label, is_required, field_type, depends_on_key, depends_on_value_label, sort_order } =
+    parsed.data;
 
   try {
     const [result] = await pool.query<any>(
-      `INSERT INTO categories (level, \`key\`, label, is_required, field_type, sort_order)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [level, key, label, is_required, field_type, sort_order]
+      `INSERT INTO categories
+         (level, \`key\`, label, is_required, field_type, depends_on_key, depends_on_value_label, sort_order)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [level, key, label, is_required, field_type, depends_on_key, depends_on_value_label, sort_order]
     );
-    return res
-      .status(201)
-      .json({ id: result.insertId, level, key, label, is_required, field_type, sort_order, values: [] });
+    return res.status(201).json({
+      id: result.insertId,
+      level,
+      key,
+      label,
+      is_required,
+      field_type,
+      depends_on_key,
+      depends_on_value_label,
+      sort_order,
+      values: [],
+    });
   } catch (err: any) {
     if (err?.code === "ER_DUP_ENTRY") {
       return res.status(409).json({ error: `Ya existe una categoría con la clave "${key}".` });
@@ -111,6 +129,8 @@ categoriesRouter.delete("/:id", requireAdmin, async (req, res) => {
 const valueSchema = z.object({
   label: z.string().min(1),
   abbreviation: z.string().min(1).max(32),
+  // Solo se usa en la categoría "concesionario", para filtrar según la Región elegida.
+  region_scope: z.enum(["LIMA", "PROVINCIAS"]).nullable().optional().default(null),
   sort_order: z.number().int().optional().default(0),
 });
 
@@ -121,14 +141,16 @@ categoriesRouter.post("/:id/values", requireAdmin, async (req, res) => {
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.flatten() });
   }
-  const { label, abbreviation, sort_order } = parsed.data;
+  const { label, abbreviation, region_scope, sort_order } = parsed.data;
 
   const [result] = await pool.query<any>(
-    `INSERT INTO catalog_values (category_id, label, abbreviation, sort_order)
-     VALUES (?, ?, ?, ?)`,
-    [categoryId, label, abbreviation, sort_order]
+    `INSERT INTO catalog_values (category_id, label, abbreviation, region_scope, sort_order)
+     VALUES (?, ?, ?, ?, ?)`,
+    [categoryId, label, abbreviation, region_scope, sort_order]
   );
-  return res.status(201).json({ id: result.insertId, category_id: categoryId, label, abbreviation, sort_order });
+  return res
+    .status(201)
+    .json({ id: result.insertId, category_id: categoryId, label, abbreviation, region_scope, sort_order });
 });
 
 /** GET /api/categories/suggest-abbreviation?label=... — sugerencia editable, no se guarda sola. */

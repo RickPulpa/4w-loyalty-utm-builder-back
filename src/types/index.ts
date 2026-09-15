@@ -1,6 +1,6 @@
 export type FieldLevel = "campaign" | "adset" | "ad";
 
-export type FieldType = "select" | "multi_select" | "month" | "age_range";
+export type FieldType = "select" | "multi_select" | "chip_select" | "month" | "age_range";
 
 export interface CategoryRow {
   id: number;
@@ -9,6 +9,8 @@ export interface CategoryRow {
   label: string;
   is_required: boolean;
   field_type: FieldType;
+  depends_on_key: string | null;
+  depends_on_value_label: string | null;
   sort_order: number;
   created_at: string;
   updated_at: string;
@@ -19,6 +21,7 @@ export interface CatalogValueRow {
   category_id: number;
   label: string;
   abbreviation: string;
+  region_scope: "LIMA" | "PROVINCIAS" | null;
   sort_order: number;
   created_at: string;
   updated_at: string;

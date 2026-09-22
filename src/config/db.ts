@@ -10,6 +10,15 @@ export const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   dateStrings: true,
+  // mysql2 devuelve TINYINT(1)/BOOLEAN como 0/1 por defecto — lo casteamos a
+  // boolean real para que coincida con los tipos de TypeScript (CategoryRow.is_required)
+  // y con lo que espera el frontend al reenviar el valor en un PUT.
+  typeCast: (field, next) => {
+    if (field.type === "TINY" && field.length === 1) {
+      return field.string() === "1";
+    }
+    return next();
+  },
 });
 
 export async function checkDbConnection(): Promise<void> {

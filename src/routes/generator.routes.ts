@@ -11,6 +11,10 @@ const DEFAULT_SETTINGS: Record<string, string> = {
   prefix_campaign: "PE_HONDA_META_",
   prefix_adset: "",
   prefix_ad: "",
+  // Nombres descriptivos (solo se muestran en Administración, no entran en el nombre generado).
+  prefix_campaign_label: "PERÚ HONDA META",
+  prefix_adset_label: "",
+  prefix_ad_label: "",
   separator: "_",
 };
 
@@ -134,7 +138,12 @@ generatorRouter.post("/generate", async (req, res) => {
   const prefix = settings[prefixKey] ?? "";
   const separator = settings.separator ?? "_";
 
-  const name = `${prefix}${nameParts.join(separator)}`;
+  // El prefijo se guarda sin separador final (ej. "PE_HONDA_META"); si una base vieja lo trae
+  // con separador ("PE_HONDA_META_") se lo quitamos para no duplicarlo al unir.
+  const cleanPrefix =
+    separator && prefix.endsWith(separator) ? prefix.slice(0, -separator.length) : prefix;
+  const body = nameParts.join(separator);
+  const name = cleanPrefix ? `${cleanPrefix}${separator}${body}` : body;
 
   return res.json({ name, level });
 });

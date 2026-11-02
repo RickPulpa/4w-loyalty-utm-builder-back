@@ -21,7 +21,21 @@ export const env = {
   corsOrigin: corsOrigins,
 
   jwtSecret: required("JWT_SECRET"),
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? "8h",
+  // Duración de la sesión una vez que el usuario validó el código 2FA.
+  jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? "15d",
+  isProduction: process.env.NODE_ENV === "production",
+
+  twoFactor: {
+    ttlMinutes: Number(process.env.TWO_FACTOR_TTL_MIN ?? 10),
+    maxAttempts: 5,
+    resendCooldownSeconds: 60,
+  },
+
+  email: {
+    provider: (process.env.EMAIL_PROVIDER ?? "console") as "resend" | "sendgrid" | "console",
+    apiKey: process.env.EMAIL_API_KEY ?? "",
+    from: process.env.EMAIL_FROM ?? "Honda UTM Builder <no-reply@example.com>",
+  },
 
   db: {
     host: required("DB_HOST", "localhost"),

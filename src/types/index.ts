@@ -27,12 +27,15 @@ export interface CatalogValueRow {
   updated_at: string;
 }
 
+export type UserRole = "super_admin" | "admin" | "editor";
+
 export interface UserRow {
   id: number;
   username: string;
   password_hash: string;
+  email: string | null;
   full_name: string | null;
-  role: "admin" | "editor";
+  role: UserRole;
   created_at: string;
 }
 

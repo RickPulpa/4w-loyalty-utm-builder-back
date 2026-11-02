@@ -17,8 +17,15 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
 }
 
 export function requireAdmin(req: Request, res: Response, next: NextFunction) {
-  if (req.user?.role !== "admin") {
+  if (req.user?.role !== "admin" && req.user?.role !== "super_admin") {
     return res.status(403).json({ error: "Requiere permisos de administrador." });
+  }
+  return next();
+}
+
+export function requireSuperAdmin(req: Request, res: Response, next: NextFunction) {
+  if (req.user?.role !== "super_admin") {
+    return res.status(403).json({ error: "Requiere permisos de super administrador." });
   }
   return next();
 }

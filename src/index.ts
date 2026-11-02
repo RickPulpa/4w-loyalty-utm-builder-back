@@ -3,6 +3,7 @@ import cors from "cors";
 import { env } from "./config/env";
 import { checkDbConnection } from "./config/db";
 import { authRouter } from "./routes/auth.routes";
+import { usersRouter } from "./routes/users.routes";
 import { categoriesRouter, valuesRouter } from "./routes/categories.routes";
 import { generatorRouter } from "./routes/generator.routes";
 import { metaRouter } from "./routes/meta.routes";
@@ -22,6 +23,7 @@ app.get("/api/health", async (_req, res) => {
 });
 
 app.use("/api/auth", authRouter);
+app.use("/api/users", usersRouter);
 app.use("/api/categories", categoriesRouter);
 app.use("/api/values", valuesRouter);
 app.use("/api", generatorRouter); // /api/settings, /api/generate

@@ -2,7 +2,8 @@ interface TwoFactorEmailInput {
   name: string;
   code: string;
   ttlMinutes: number;
-  sessionDays: number;
+  /** Duración de la sesión ya redactada, ej. "8 horas" o "15 días". */
+  sessionLabel: string;
 }
 
 export interface RenderedEmail {
@@ -15,7 +16,7 @@ const escapeHtml = (value: string) =>
   value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 /** Correo con el código de verificación (2FA). HTML con tablas y estilos inline para Gmail/Outlook. */
-export function renderTwoFactorEmail({ name, code, ttlMinutes, sessionDays }: TwoFactorEmailInput): RenderedEmail {
+export function renderTwoFactorEmail({ name, code, ttlMinutes, sessionLabel }: TwoFactorEmailInput): RenderedEmail {
   const firstName = escapeHtml(name.trim().split(/\s+/)[0] || "");
   const greeting = firstName ? `Hola ${firstName},` : "Hola,";
   const spacedCode = code.split("").join(" ");
@@ -60,7 +61,7 @@ export function renderTwoFactorEmail({ name, code, ttlMinutes, sessionDays }: Tw
           <tr>
             <td style="padding:0 28px 28px;">
               <p style="margin:0 0 10px;font-size:13px;line-height:1.6;color:#52525b;">
-                Una vez dentro, tu sesión se mantiene activa por <strong>${sessionDays} días</strong>; después te pediremos un código nuevo.
+                Una vez dentro, tu sesión se mantiene activa por <strong>${sessionLabel}</strong>; después te pediremos un código nuevo.
               </p>
               <p style="margin:0;font-size:13px;line-height:1.6;color:#52525b;">
                 Si no intentaste iniciar sesión, ignora este correo y avisa a tu administrador. Nunca compartas este código con nadie.
@@ -85,7 +86,7 @@ export function renderTwoFactorEmail({ name, code, ttlMinutes, sessionDays }: Tw
     `Tu código de acceso a UTM Builder (Honda Loyalty) es: ${code}`,
     `Vence en ${ttlMinutes} minutos.`,
     "",
-    `Una vez dentro, tu sesión dura ${sessionDays} días; después te pediremos un código nuevo.`,
+    `Una vez dentro, tu sesión dura ${sessionLabel}; después te pediremos un código nuevo.`,
     "Si no intentaste iniciar sesión, ignora este correo y avisa a tu administrador.",
     "Nunca compartas este código con nadie.",
   ].join("\n");

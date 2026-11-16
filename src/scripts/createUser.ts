@@ -1,15 +1,17 @@
 /**
  * Crea (o actualiza la contraseña de) un usuario del panel. Entra con su correo + contraseña
- * + código 2FA que le llega a ese correo.
+ * + código 2FA que le llega a ese correo. La contraseña debe cumplir la política (8 caracteres, 10 para
+ * admin/super_admin; mayúsculas, minúsculas y números) y el usuario deberá cambiarla en su primer ingreso.
  *
  * Uso:
  *   npm run create-user -- <correo> <password> [super_admin|admin|editor] ["Nombre completo"]
  *
  * Ejemplo:
- *   npm run create-user -- marco_llontop@honda.com.pe "unaClaveLarga123!" admin "Marco Llontop"
+ *   npm run create-user -- marco_llontop@honda.com.pe "UnaClaveLarga123" admin "Marco Llontop"
  */
-import bcrypt from "bcryptjs";
 import { pool } from "../config/db";
+import { hashPassword, recordPasswordHistory, validatePasswordPolicy } from "../utils/passwordPolicy";
+import { UserRole } from "../types";
 
 const ROLES = ["super_admin", "admin", "editor"];
 
@@ -29,16 +31,25 @@ async function main() {
     process.exit(1);
   }
 
+  const policyError = validatePasswordPolicy(password, role as UserRole);
+  if (policyError) {
+    console.error(policyError);
+    process.exit(1);
+  }
+
   const email = rawEmail.trim().toLowerCase();
-  const passwordHash = await bcrypt.hash(password, 10);
+  const passwordHash = await hashPassword(password);
 
   await pool.query(
-    `INSERT INTO users (username, email, password_hash, full_name, role)
-     VALUES (?, ?, ?, ?, ?)
+    `INSERT INTO users (username, email, password_hash, full_name, role, must_change_password, password_changed_at)
+     VALUES (?, ?, ?, ?, ?, 1, NOW())
      ON DUPLICATE KEY UPDATE email = VALUES(email), password_hash = VALUES(password_hash),
-       full_name = VALUES(full_name), role = VALUES(role)`,
+       full_name = VALUES(full_name), role = VALUES(role), must_change_password = 1,
+       password_changed_at = NOW(), failed_attempts = 0, locked_at = NULL`,
     [email, email, passwordHash, fullName, role]
   );
+  const [rows] = await pool.query<any[]>("SELECT id FROM users WHERE email = ?", [email]);
+  await recordPasswordHistory(rows[0].id, passwordHash);
 
   console.log(`Usuario "${email}" (${role}) listo.`);
   await pool.end();

@@ -14,7 +14,22 @@ CREATE TABLE IF NOT EXISTS users (
   email VARCHAR(190) NULL UNIQUE,
   full_name VARCHAR(150) NULL,
   role ENUM('super_admin', 'admin', 'editor') NOT NULL DEFAULT 'editor',
+  -- Políticas de seguridad: cambio obligatorio, vigencia de 90 días y bloqueo por intentos fallidos.
+  must_change_password TINYINT(1) NOT NULL DEFAULT 1,
+  password_changed_at DATETIME NULL,
+  failed_attempts INT NOT NULL DEFAULT 0,
+  locked_at DATETIME NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Historial de contraseñas (solo hashes) para impedir reutilizar las últimas 5.
+CREATE TABLE IF NOT EXISTS password_history (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_password_history_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_password_history_user (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Códigos 2FA enviados por correo (solo se guarda su HMAC, nunca el código en claro).

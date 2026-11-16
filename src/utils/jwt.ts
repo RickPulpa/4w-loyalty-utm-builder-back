@@ -8,6 +8,13 @@ export function signToken(payload: AuthTokenPayload): string {
   } as SignOptions);
 }
 
+/** Sesión corta y restringida: solo sirve para /auth/change-password y /auth/me. */
+export function signPasswordChangeToken(payload: Omit<AuthTokenPayload, "pwdChange">): string {
+  return jwt.sign({ ...payload, pwdChange: true }, env.jwtSecret, {
+    expiresIn: "30m",
+  } as SignOptions);
+}
+
 /** Token de sesión. Rechaza los tokens de desafío 2FA para que no sirvan como sesión. */
 export function verifyToken(token: string): AuthTokenPayload {
   const payload = jwt.verify(token, env.jwtSecret) as unknown as AuthTokenPayload & { purpose?: string };

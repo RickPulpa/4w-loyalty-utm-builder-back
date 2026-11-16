@@ -36,6 +36,10 @@ export interface UserRow {
   email: string | null;
   full_name: string | null;
   role: UserRole;
+  must_change_password: boolean;
+  password_changed_at: string | null;
+  failed_attempts: number;
+  locked_at: string | null;
   created_at: string;
 }
 
@@ -43,6 +47,8 @@ export interface AuthTokenPayload {
   sub: number;
   username: string;
   role: UserRow["role"];
+  /** true = sesión restringida: solo puede cambiar su contraseña (primer ingreso o contraseña vencida). */
+  pwdChange?: boolean;
 }
 
 declare global {

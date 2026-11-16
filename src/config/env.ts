@@ -22,8 +22,17 @@ export const env = {
 
   jwtSecret: required("JWT_SECRET"),
   // Duración de la sesión una vez que el usuario validó el código 2FA.
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? "15d",
+  jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? "8h",
   isProduction: process.env.NODE_ENV === "production",
+  // En producción el API solo escucha en localhost (Apache hace de proxy); en dev, en todas las interfaces.
+  host: process.env.HOST ?? (process.env.NODE_ENV === "production" ? "127.0.0.1" : undefined),
+
+  // IPs (o rangos IPv4 CIDR, ej. 203.0.113.0/24) desde las que se permite usar el panel administrativo
+  // (Administrar y Usuarios). Vacío = sin restricción (útil en desarrollo).
+  adminAllowedIps: (process.env.ADMIN_ALLOWED_IPS ?? "")
+    .split(",")
+    .map((ip) => ip.trim())
+    .filter(Boolean),
 
   twoFactor: {
     ttlMinutes: Number(process.env.TWO_FACTOR_TTL_MIN ?? 10),
@@ -54,3 +63,18 @@ export const env = {
 
 export const isMetaConfigured = () =>
   Boolean(env.meta.accessToken && env.meta.adAccountId);
+
+/** "8h" -> "8 horas", "15d" -> "15 días", "30m" -> "30 minutos" (para los textos del correo). */
+export function describeDuration(expr: string): string {
+  const m = /^(\d+)\s*([smhd])$/.exec(expr.trim());
+  if (!m) return expr;
+  const n = Number(m[1]);
+  const units: Record<string, [string, string]> = {
+    s: ["segundo", "segundos"],
+    m: ["minuto", "minutos"],
+    h: ["hora", "horas"],
+    d: ["día", "días"],
+  };
+  const [one, many] = units[m[2]];
+  return `${n} ${n === 1 ? one : many}`;
+}

@@ -28,7 +28,7 @@ generatorRouter.get("/settings", async (_req, res) => {
   return res.json(settings);
 });
 
-const settingsSchema = z.record(z.string());
+const settingsSchema = z.record(z.string(), z.string());
 
 /** PUT /api/settings — edita prefijos/separador (solo admin). */
 generatorRouter.put("/settings", requireAdmin, async (req, res) => {

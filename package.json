@@ -8,16 +8,19 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
-    "create-user": "tsx src/scripts/createUser.ts"
+    "create-user": "tsx src/scripts/createUser.ts",
+    "unlock-user": "tsx src/scripts/unlockUser.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "express-rate-limit": "^8.7.4",
+    "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.11.3",
-    "zod": "^3.23.8"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -27,5 +30,8 @@
     "@types/node": "^20.14.10",
     "tsx": "^4.16.2",
     "typescript": "^5.5.3"
+  },
+  "overrides": {
+    "qs": "^6.16.2"
   }
 }
